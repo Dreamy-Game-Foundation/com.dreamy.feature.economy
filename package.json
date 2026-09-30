@@ -2,12 +2,17 @@
   "name": "com.dreamy.feature.economy",
   "version": "0.1.0",
   "displayName": "Dreamy Economy Contracts",
-  "description": "Stable resource identifiers and idempotent wallet grant contracts shared by economy features.",
+  "description": "Stable resource identifiers, persistent Datasave wallet, and idempotent grant contracts shared by economy features.",
   "unity": "6000.0",
   "type": "library",
   "license": "UNLICENSED",
   "author": {
     "name": "Dreamy Studio"
+  },
+  "dependencies": {
+    "com.dreamy.core": "1.1.2",
+    "com.dreamy.ui": "0.2.0",
+    "com.dreamy.datasave": "0.2.0"
   },
   "keywords": [
     "economy",
@@ -15,5 +20,12 @@
     "resource",
     "reward",
     "dreamy"
+  ],
+  "samples": [
+    {
+      "displayName": "Resource Holders",
+      "description": "Coin and gem UI holder variants backed by the shared resource display catalog.",
+      "path": "Samples~/Resource Holders"
+    }
   ]
 }

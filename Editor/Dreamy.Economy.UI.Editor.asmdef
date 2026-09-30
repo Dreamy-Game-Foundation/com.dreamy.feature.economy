@@ -1,10 +1,10 @@
 {
-  "name": "Dreamy.Economy.Runtime",
-  "rootNamespace": "Dreamy.Economy",
+  "name": "Dreamy.Economy.UI.Editor",
+  "rootNamespace": "Dreamy.Economy.UI.Editor",
   "references": [
-    "Dreamy.Datasave.Runtime"
+    "Dreamy.Economy.UI.Runtime"
   ],
-  "includePlatforms": [],
+  "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,
@@ -12,5 +12,5 @@
   "autoReferenced": true,
   "defineConstraints": [],
   "versionDefines": [],
-  "noEngineReferences": true
+  "noEngineReferences": false
 }

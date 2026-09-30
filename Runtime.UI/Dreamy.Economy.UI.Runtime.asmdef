@@ -1,8 +1,12 @@
 {
-  "name": "Dreamy.Economy.Runtime",
-  "rootNamespace": "Dreamy.Economy",
+  "name": "Dreamy.Economy.UI.Runtime",
+  "rootNamespace": "Dreamy.Economy.UI",
   "references": [
-    "Dreamy.Datasave.Runtime"
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Core.Runtime",
+    "Dreamy.UI.Runtime",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
@@ -12,5 +16,5 @@
   "autoReferenced": true,
   "defineConstraints": [],
   "versionDefines": [],
-  "noEngineReferences": true
+  "noEngineReferences": false
 }
