@@ -83,7 +83,6 @@ namespace Dreamy.Economy.UI
                 if (iconImage != null)
                 {
                     if (display.Icon != null) iconImage.sprite = display.Icon;
-                    iconImage.color = display.IconColor;
                     iconImage.enabled = iconImage.sprite != null;
                 }
                 if (displayNameText != null) displayNameText.text = display.DisplayName;

@@ -16,10 +16,8 @@ MonoBehaviour:
   - resourceId: currency.coin
     displayName: Coin
     icon: {fileID: 0}
-    iconColor: {r: 1, g: 0.78, b: 0.12, a: 1}
     amountFormat: 2
   - resourceId: currency.gem
     displayName: Gem
     icon: {fileID: 0}
-    iconColor: {r: 0.2, g: 0.85, b: 1, a: 1}
     amountFormat: 2

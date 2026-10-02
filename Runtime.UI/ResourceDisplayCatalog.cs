@@ -33,13 +33,11 @@ namespace Dreamy.Economy.UI
         [SerializeField] private string resourceId;
         [SerializeField] private string displayName;
         [SerializeField] private Sprite icon;
-        [SerializeField] private Color iconColor = Color.white;
         [SerializeField] private ResourceAmountFormat amountFormat = ResourceAmountFormat.Compact;
 
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? resourceId : displayName;
         public string Id => resourceId;
         public Sprite Icon => icon;
-        public Color IconColor => iconColor;
         public ResourceAmountFormat AmountFormat => amountFormat;
 
         internal bool Matches(ResourceId id) =>
