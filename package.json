@@ -1,6 +1,6 @@
 {
   "name": "com.dreamy.feature.economy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Dreamy Economy Contracts",
   "description": "Stable resource identifiers, persistent Datasave wallet, and idempotent grant contracts shared by economy features.",
   "unity": "6000.0",
