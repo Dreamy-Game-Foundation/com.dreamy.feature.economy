@@ -1,0 +1,4 @@
+{
+  "name": "Dreamy.Feature.Economy.Integration.Runtime",
+  "references": ["Dreamy.Economy.Runtime", "Dreamy.UI.Runtime", "UniTask", "Unity.TextMeshPro", "Unity.UGUI"]
+}

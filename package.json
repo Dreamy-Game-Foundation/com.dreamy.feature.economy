@@ -26,6 +26,11 @@
       "displayName": "Resource Holders",
       "description": "Coin and gem UI holder variants backed by the shared resource display catalog.",
       "path": "Samples~/Resource Holders"
+    },
+    {
+      "displayName": "Wallet Demo",
+      "description": "Shared wallet balances, demo grants and idempotent retry controls. Configure with host-owned services.",
+      "path": "Samples~/Wallet Demo"
     }
   ]
 }
