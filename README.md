@@ -49,6 +49,11 @@ Import Resource Holders; đặt Prefabs/CoinHolder.prefab hoặc GemHolder.prefa
 
 Holder resolve IResourceBalanceProvider từ ServiceLocator. Có thể gọi ResourceUIHolder.Bind(provider) để inject; provider observable cập nhật UI ngay khi balance thay đổi. Code dùng holder cần Dreamy.Economy.UI.Runtime.
 
+Holder mặc định bật `Auto Refresh` và nghe thay đổi số dư. Tắt tùy chọn này
+trên holder do presenter điều khiển: wallet đổi data, presenter chờ effect rồi gọi
+`RefreshBalance()` để cập nhật view. Bind/mở lại vẫn đọc số dư mới nhất.
+`IconTarget` và `Icon` cung cấp điểm đến/sprite mà không làm Economy phụ thuộc Feedback.
+
 Holder là HUD component, không phải UIPanel. Nếu tải bằng Addressables, load GameObject, instantiate dưới Canvas rồi bind provider; không gọi PanelManager.Show<ResourceUIHolder>().
 ## Import sample
 

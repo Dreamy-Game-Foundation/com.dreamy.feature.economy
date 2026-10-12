@@ -18,6 +18,7 @@ namespace Dreamy.Economy.UI.Editor
             EditorGUILayout.PropertyField(serializedObject.FindProperty("iconImage"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("amountText"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("displayNameText"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("autoRefresh"));
 
             if (serializedObject.ApplyModifiedProperties())
             {

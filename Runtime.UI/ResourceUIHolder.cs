@@ -13,6 +13,7 @@ namespace Dreamy.Economy.UI
         [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text amountText;
         [SerializeField] private TMP_Text displayNameText;
+        [SerializeField] private bool autoRefresh = true;
 
         private IResourceBalanceProvider balanceProvider;
         private IResourceBalanceSource balanceSource;
@@ -20,6 +21,8 @@ namespace Dreamy.Economy.UI
         private ResourceAmountFormat amountFormat = ResourceAmountFormat.Compact;
 
         public ResourceId ResourceId => currentResourceId;
+        public Transform IconTarget => iconImage != null ? iconImage.transform : transform;
+        public Sprite Icon => iconImage != null ? iconImage.sprite : null;
 
         private void OnEnable()
         {
@@ -49,7 +52,7 @@ namespace Dreamy.Economy.UI
         {
             Unbind();
             balanceProvider = provider;
-            balanceSource = provider as IResourceBalanceSource;
+            balanceSource = autoRefresh ? provider as IResourceBalanceSource : null;
             if (balanceSource != null) balanceSource.BalanceChanged += OnBalanceChanged;
             RefreshBalance();
         }
@@ -98,7 +101,7 @@ namespace Dreamy.Economy.UI
         {
             if (change.ResourceId == currentResourceId && amountText != null)
             {
-                amountText.text = ResourceAmountFormatter.Format(change.Balance, amountFormat);
+                RefreshBalance();
             }
         }
 
