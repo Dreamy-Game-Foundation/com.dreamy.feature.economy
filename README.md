@@ -43,6 +43,21 @@ ServiceLocator.Register<IResourceBalanceProvider>(
 
 Wallet persist sau grant/exchange thành công và phát BalanceChanged. Grant phải có transaction ID ổn định. Ledger có giới hạn; game cần chính sách idempotency đủ dài cho retry purchase/reward. Root unregister hai interface khi teardown; mọi feature dùng cùng wallet, không tạo wallet mới trong panel.
 
+## Typed reward delivery
+
+`Dreamy.Economy.Rewards` adds immutable resolved bundles, stable identities,
+strict destinations and a journal embedded in the claiming feature's save.
+See `Documentation~/reward-api.md` for the integration sequence and exact API
+signatures, and `Documentation~/reward-delivery.md` for ownership and limits.
+
+`DatasaveResourceWallet` implements `IRewardDestination` for kind `currency`.
+Strict delivery receipts and legacy collision tombstones are retained without
+the legacy history limit. Existing `TryGrant`/`TryExchange` calls still use the
+constructor's bounded duplicate history (4096 by default). Strict delivery
+rejects an old ID-only receipt rather than assuming equal payload or regranting.
+The wallet now persists detached balance/receipt candidates before publishing
+runtime state or events; exchange remains one checked, atomic owner mutation.
+
 ## Holder và sample
 
 Import Resource Holders; đặt Prefabs/CoinHolder.prefab hoặc GemHolder.prefab dưới Canvas safe area. Chọn Resource Type, thay icon và bổ sung entry trong ResourceDisplayCatalog. ID dùng category.name, ví dụ currency.coin/currency.gem.

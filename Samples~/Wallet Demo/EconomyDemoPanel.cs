@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Dreamy.Economy;
+using Dreamy.Economy.Rewards;
 using Dreamy.UI;
 using TMPro;
 using UnityEngine;
@@ -62,8 +63,27 @@ namespace Dreamy.Feature.Economy.Integration
         private void Retry() { if (lastGrantId != null) ApplyGrant(); }
         private void ApplyGrant()
         {
-            bool granted = wallet.TryGrant(new ResourceGrantRequest(lastGrantId, new ResourceAmount(new ResourceId("currency.coin"), 100)));
-            statusText.text = granted ? "Grant accepted (same transaction grants once)" : "Grant failed; retry available";
+            if (wallet is IRewardDestination destination)
+            {
+                var entry = new ResolvedRewardEntry("coins", "currency", "currency.coin", 100);
+                var bundle = new ResolvedRewardBundle(1, "wallet-demo-v1", new[] { entry });
+                var request = new RewardDeliveryRequest(
+                    RewardIdentity.EntryTransaction(lastGrantId, entry.EntryId),
+                    RewardIdentity.Fingerprint("wallet-demo", "coins", "100"),
+                    bundle.Fingerprint, entry);
+                RewardDeliveryResult result = destination.Deliver(request);
+                statusText.text = result.IsSuccess
+                    ? result.Status.ToString()
+                    : $"{result.Status}: {result.Reason}";
+            }
+            else
+            {
+                bool granted = wallet.TryGrant(new ResourceGrantRequest(lastGrantId,
+                    new ResourceAmount(new ResourceId("currency.coin"), 100)));
+                statusText.text = granted
+                    ? "Legacy wallet accepted; durability depends on the host."
+                    : "Grant failed; retry available";
+            }
             Refresh();
         }
         private void Close() => Hide().Forget();
