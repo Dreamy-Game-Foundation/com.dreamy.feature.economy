@@ -13,6 +13,14 @@
   delivery coordinator with detached persistence callbacks.
 - Add persisted-owner recreation, fault-boundary and file-backed DataSave tests.
 
+## [0.3.1] - 2026-10-15
+
+- Move ResourceUIHolder into the Resource Holders sample, preserving its GUID and variant references so imported prefabs can be edited by the host project.
+- Simplify holder prefabs to RectTransform-based layout; remove HorizontalLayoutGroup, LayoutElement, CanvasGroup, and scale tween components.
+- Update CoinHolder and GemHolder anchors for the simplified base prefab.
+- Remove ResourceUIHolder.OnValidate; retain explicit inspector and runtime resource updates.
+- Update Resource Holders integration documentation.
+
 ## [0.2.1] - 2026-10-12
 
 - Expose resource icon and HUD target for host-owned reward presentation.

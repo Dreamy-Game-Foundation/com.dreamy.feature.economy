@@ -42,12 +42,6 @@ namespace Dreamy.Economy.UI
 
         private void OnDisable() => Unbind();
 
-        private void OnValidate()
-        {
-            ApplyResource(resourceId);
-            if (!Application.isPlaying) RefreshBalance();
-        }
-
         public void Bind(IResourceBalanceProvider provider)
         {
             Unbind();

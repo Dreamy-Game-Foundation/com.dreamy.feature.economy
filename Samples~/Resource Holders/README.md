@@ -6,7 +6,7 @@ Sample của Dreamy Economy Contracts. Import từ Window > Package Manager > Dr
 
 Giữ nguyên folder, .meta, asmdef và reference prefab khi chuyển vào project. Chỉ giữ một bản script/asmdef và một JSON cho mỗi key Resources/DataConfig. Bootstrap config/save/wallet/audio tại GameInstaller trước khi bật UI, theo [README package](../../README.md). Link tương đối này dùng trong source package; sau import, mở README package từ Package Manager.
 
-CoinHolder và GemHolder là variant của ResourceUIHolder. Đặt dưới safe area, chọn Resource Type, gán icon trong ResourceDisplayCatalog và cung cấp IResourceBalanceProvider. Provider observable tự cập nhật balance. Holder là HUD, không phải UIPanel.
+ResourceUIHolder, CoinHolder và GemHolder đều nằm trong sample để sửa trực tiếp sau import. CoinHolder và GemHolder là variant của ResourceUIHolder. Prefab gốc chỉ giữ UI và binding; bố cục dùng RectTransform, không dùng HorizontalLayoutGroup, LayoutElement hoặc tween. Đặt dưới safe area, chọn Resource Type, gán icon trong ResourceDisplayCatalog và cung cấp IResourceBalanceProvider. Provider observable tự cập nhật balance. Holder là HUD, không phải UIPanel.
 
 ## Addressables cho HUD/overlay
 
