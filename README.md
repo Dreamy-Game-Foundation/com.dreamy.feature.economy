@@ -1,5 +1,15 @@
 # Dreamy Economy Contracts
 
+## Bắt đầu dùng currency và reward
+
+Đọc [cách tích hợp và mức độ sẵn sàng](Documentation~/usage-and-readiness.md):
+composition root dùng một wallet/profile, claim qua service, strict grant trực tiếp,
+TryExchange, custom inventory owner, HUD và các giới hạn recovery/production.
+
+Contract hiện phù hợp tài nguyên số nguyên trong scope đã kiểm chứng; không phải
+giải pháp sẵn sàng cho mọi game. BigNumber, server/cloud authority và durable IAP
+cần contract/adapter và validation riêng. Xem RELEASE_NOTES.md để biết phiên bản source và các gate chưa chạy.
+
 Package thuộc Dreamy Game Studio. Hướng dẫn dưới đây mô tả cấu trúc, cách cài vào project và tích hợp ở root/scene.
 
 ## Cài package
@@ -41,22 +51,22 @@ ServiceLocator.Register<IResourceBalanceProvider>(
     (IResourceBalanceProvider)wallet);
 ```
 
-Wallet persist sau grant/exchange thành công và phát BalanceChanged. Grant phải có transaction ID ổn định. Ledger có giới hạn; game cần chính sách idempotency đủ dài cho retry purchase/reward. Root unregister hai interface khi teardown; mọi feature dùng cùng wallet, không tạo wallet mới trong panel.
+Wallet persist sau grant/exchange thành công và phát BalanceChanged. Grant phải có transaction ID ổn định. Đường legacy TryGrant/TryExchange có bounded duplicate history; strict delivery receipts được giữ riêng theo lifetime profile/save namespace. Root unregister hai interface khi teardown; mọi feature dùng cùng wallet, không tạo wallet mới trong panel.
 
-## Typed reward delivery
+## Giao reward có kiểu dữ liệu rõ ràng
 
-`Dreamy.Economy.Rewards` adds immutable resolved bundles, stable identities,
-strict destinations and a journal embedded in the claiming feature's save.
-See `Documentation~/reward-api.md` for the integration sequence and exact API
-signatures, and `Documentation~/reward-delivery.md` for ownership and limits.
+`Dreamy.Economy.Rewards` cung cấp bundle cụ thể bất biến, identity ổn định,
+destination strict và journal được embed trong save của feature nhận thưởng.
+Xem [tích hợp API](Documentation~/reward-api.md) và
+[ownership/recovery](Documentation~/reward-delivery.md) để biết trình tự và giới hạn.
 
-`DatasaveResourceWallet` implements `IRewardDestination` for kind `currency`.
-Strict delivery receipts and legacy collision tombstones are retained without
-the legacy history limit. Existing `TryGrant`/`TryExchange` calls still use the
-constructor's bounded duplicate history (4096 by default). Strict delivery
-rejects an old ID-only receipt rather than assuming equal payload or regranting.
-The wallet now persists detached balance/receipt candidates before publishing
-runtime state or events; exchange remains one checked, atomic owner mutation.
+DatasaveResourceWallet triển khai IRewardDestination cho kind currency. Strict
+receipts và tombstone collision legacy được giữ riêng, không bị giới hạn 4096 của
+history legacy. TryGrant/TryExchange cũ vẫn dùng bounded history của constructor.
+Strict delivery từ chối receipt chỉ có ID mà không xác minh được payload; không
+giả định payload giống nhau hoặc cấp lại. Wallet lưu detached balance/receipt
+candidate trước khi cập nhật runtime/cache/event; exchange vẫn là một mutation
+atomic trong cùng owner.
 
 ## Holder và sample
 
