@@ -29,6 +29,8 @@ namespace Dreamy.Economy.Tests
             store.SaveAll();
             var recreated = new DatasaveResourceWallet(new RewardTestStore(store.Disk));
             Assert.That(recreated.GetBalance(Coin), Is.Zero);
+            Assert.That(wallet.TryGrant(grant), Is.False); // Ambiguous owner write must reconcile first.
+            wallet.Reload();
             Assert.That(wallet.TryGrant(grant), Is.True);
             recreated = new DatasaveResourceWallet(new RewardTestStore(store.Disk));
             Assert.That(recreated.TryGrant(grant), Is.True);
@@ -36,7 +38,7 @@ namespace Dreamy.Economy.Tests
         }
 
         [Test]
-        public void StrictGrant_FailedSaveRetriesAgainstCachedState_ThenRecreates()
+        public void StrictGrant_FailedSaveRequiresReloadBeforeRetry_ThenRecreates()
         {
             var store = new RewardTestStore();
             var wallet = new DatasaveResourceWallet(store);
@@ -50,6 +52,8 @@ namespace Dreamy.Economy.Tests
             Assert.That(events, Is.Zero);
             store.BeforeSave = null;
             store.SaveAll();
+            Assert.That(wallet.Deliver(request).Reason, Is.EqualTo(RewardDeliveryReason.PersistenceFailed));
+            wallet.Reload();
             Assert.That(wallet.Deliver(request).Status, Is.EqualTo(RewardDeliveryStatus.Delivered));
             Assert.That(events, Is.EqualTo(1));
             wallet = new DatasaveResourceWallet(new RewardTestStore(store.Disk));

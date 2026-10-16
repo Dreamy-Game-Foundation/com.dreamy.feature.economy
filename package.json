@@ -1,8 +1,8 @@
 {
   "name": "com.dreamy.feature.economy",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "displayName": "Dreamy Economy Contracts",
-  "description": "Stable resource identifiers, persistent Datasave wallet, and idempotent grant contracts shared by economy features.",
+  "description": "Shared persistent resource and inventory owner, idempotent reward destinations, grants, spend/exchange and resource recovery contracts.",
   "unity": "6000.0",
   "type": "library",
   "license": "UNLICENSED",
@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "com.dreamy.core": "1.1.2",
-    "com.dreamy.ui": "0.2.0",
-    "com.dreamy.datasave": "0.2.0"
+    "com.dreamy.ui": "1.0.5",
+    "com.dreamy.datasave": "0.2.0",
+    "com.cysharp.unitask": "2.5.10",
+    "com.unity.ugui": "2.0.0",
+    "com.dreamy.feature": "0.2.0"
   },
   "keywords": [
     "economy",
@@ -31,6 +34,11 @@
       "displayName": "Wallet Demo",
       "description": "Shared wallet balances, demo grants and idempotent retry controls. Configure with host-owned services.",
       "path": "Samples~/Wallet Demo"
+    },
+    {
+      "displayName": "Resource Recovery",
+      "description": "Standalone persisted demo, optional shortage prompt and semantic resource tabs. Explicit demo grant button; no billing simulation. Includes Editor-generated prefabs and scene.",
+      "path": "Samples~/Resource Recovery"
     }
   ]
 }

@@ -7,14 +7,18 @@ namespace Dreamy.Economy
     [Serializable]
     public sealed class EconomySaveData : SaveData
     {
-        public override int Version => 2;
+        public override int Version => 4;
+        public List<RewardReceiptSaveEntry> InventoryImports = new();
         public List<ResourceBalanceSaveEntry> Balances = new();
         public List<string> TransactionIds = new();
+        public List<ResourceTransactionReceipt> TransactionReceipts = new();
         public List<RewardReceiptSaveEntry> DeliveryReceipts = new();
         public List<string> LegacyDeliveryTombstones = new();
 
         public override void OnAfterLoad()
         {
+            InventoryImports ??= new List<RewardReceiptSaveEntry>();
+            TransactionReceipts ??= new List<ResourceTransactionReceipt>();
             Balances ??= new List<ResourceBalanceSaveEntry>();
             TransactionIds ??= new List<string>();
             DeliveryReceipts ??= new List<RewardReceiptSaveEntry>();

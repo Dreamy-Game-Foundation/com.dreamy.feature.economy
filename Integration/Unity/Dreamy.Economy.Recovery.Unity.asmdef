@@ -1,0 +1,14 @@
+{
+  "name": "Dreamy.Economy.Recovery.Unity",
+  "rootNamespace": "Dreamy.Economy.UI",
+  "references": [
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Economy.UI.Runtime",
+    "Dreamy.Economy.UI.Integration",
+    "Dreamy.UI.Runtime",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI",
+    "UniTask",
+    "Dreamy.Core.Runtime"
+  ]
+}

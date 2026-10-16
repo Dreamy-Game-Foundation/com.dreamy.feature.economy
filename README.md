@@ -1,5 +1,7 @@
 # Dreamy Economy Contracts
 
+Spend/exchange nhiều tài nguyên và recovery tùy chọn: [API, migration và sample](Documentation~/resource-recovery.md).
+
 ## Bắt đầu dùng currency và reward
 
 Đọc [cách tích hợp và mức độ sẵn sàng](Documentation~/usage-and-readiness.md):
@@ -19,8 +21,10 @@ Dùng Unity 6000.0 trở lên. Sandbox đã tham chiếu package bằng `file:..
 Dependency trực tiếp theo package.json:
 
 - `com.dreamy.core` (1.1.2)
-- `com.dreamy.ui` (0.2.0)
+- `com.dreamy.ui` (1.0.5)
 - `com.dreamy.datasave` (0.2.0)
+- `com.dreamy.feature` (0.2.0)
+- `com.cysharp.unitask` (2.5.10), `com.unity.ugui` (2.0.0)
 
 ## Cấu trúc và asmdef
 
@@ -96,3 +100,12 @@ ResourceUIHolder không phải UIPanel. Có thể đặt trực tiếp dưới C
 4. Destroy instance khi kết thúc, chỉ unload cache khi không còn consumer. Build content trước khi thử player.
 
 Luồng này cần Dreamy Assets và UniTask ở game. Không truyền type HUD/overlay vào PanelManager.Show<T>(), vì API đó yêu cầu UIPanel subclass.
+
+
+## Shared wallet and inventory (0.5.0)
+
+Dùng một DatasaveResourceWallet cho toàn bộ Coin/Gem/Card/Chest/Cosmetic. Đăng ký
+ResourceRewardDefinition cho các target của game và tạo adapter bằng CreateRewardDestination.
+Tất cả balances/ownership và receipts nằm chung EconomySaveData v4; mỗi adapter không tạo save riêng.
+Xem [shared-inventory](Documentation~/shared-inventory.md) để biết wiring, unique items,
+Reload sau lỗi ghi và ImportInventory để migrate save cũ đúng một lần.

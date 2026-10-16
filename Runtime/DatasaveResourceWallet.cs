@@ -5,7 +5,7 @@ using Dreamy.Economy.Rewards;
 
 namespace Dreamy.Economy
 {
-    public sealed class DatasaveResourceWallet : IResourceWallet, IResourceBalanceSource, IRewardDestination
+    public sealed partial class DatasaveResourceWallet : IResourceWallet, IResourceBalanceSource, IRewardDestination, IResourceTransactionWallet
     {
         private const int DefaultTransactionHistoryLimit = 4096;
         public const string CurrencyKind = "currency";
@@ -18,19 +18,33 @@ namespace Dreamy.Economy
         private readonly HashSet<string> transactionIds = new(StringComparer.Ordinal);
         private readonly HashSet<string> legacyTombstones = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> receipts = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, ResourceTransactionReceipt> transactionReceipts = new(StringComparer.Ordinal);
+        private readonly Dictionary<ResourceId, ResourceRewardDefinition> rewardDefinitions = new();
+        private bool persistenceUncertain;
         private bool busy;
+
+        // Optional diagnostics boundary; diagnostic listeners cannot invalidate a committed transaction.
+        public event Action<Exception> NotificationFailed;
 
         public DatasaveResourceWallet(
             IDatasaveService datasave,
             string saveKey = "economy",
             IReadOnlyList<ResourceAmount> initialBalances = null,
-            int transactionHistoryLimit = DefaultTransactionHistoryLimit)
+            int transactionHistoryLimit = DefaultTransactionHistoryLimit,
+            IReadOnlyList<ResourceRewardDefinition> rewardDefinitions = null)
         {
             this.datasave = datasave ?? throw new ArgumentNullException(nameof(datasave));
             if (string.IsNullOrWhiteSpace(saveKey)) throw new ArgumentException("Save key cannot be empty.", nameof(saveKey));
             if (transactionHistoryLimit <= 0) throw new ArgumentOutOfRangeException(nameof(transactionHistoryLimit));
             this.saveKey = saveKey;
             this.transactionHistoryLimit = transactionHistoryLimit;
+            if (rewardDefinitions != null)
+                foreach (var definition in rewardDefinitions)
+                {
+                    if (definition == null || this.rewardDefinitions.ContainsKey(definition.TargetId))
+                        throw new ArgumentException("Reward target definitions must be non-null and unique.", nameof(rewardDefinitions));
+                    this.rewardDefinitions.Add(definition.TargetId, definition);
+                }
             bool exists = datasave.Exists(saveKey);
             data = datasave.Load<EconomySaveData>(saveKey);
             data.OnAfterLoad();
@@ -53,6 +67,17 @@ namespace Dreamy.Economy
                     throw new InvalidOperationException("Invalid durable reward receipt ledger.");
                 receipts.Add(receipt.TransactionId, receipt.Fingerprint);
             }
+            foreach (ResourceTransactionReceipt receipt in data.TransactionReceipts)
+            {
+                if (receipt == null || receipt.SchemaVersion != 1 || string.IsNullOrWhiteSpace(receipt.TransactionId) ||
+                    (receipt.Kind != "spend" && receipt.Kind != "exchange") ||
+                    !ResourceTransactionPayload.IsValidFingerprint(receipt.Kind, receipt.Fingerprint) ||
+                    transactionReceipts.ContainsKey(receipt.TransactionId) || receipts.ContainsKey(receipt.TransactionId) ||
+                    legacyTombstones.Contains(receipt.TransactionId))
+                    throw new InvalidOperationException("Invalid durable transaction receipt ledger.");
+                transactionReceipts.Add(receipt.TransactionId, receipt);
+            }
+            ValidateInventoryImports(data);
             if (!exists && initialBalances != null)
             {
                 var initial = new Dictionary<ResourceId, long>();
@@ -71,7 +96,7 @@ namespace Dreamy.Economy
 
         public bool TryGrant(ResourceGrantRequest request)
         {
-            if (busy || string.IsNullOrWhiteSpace(request.TransactionId) || !IsValid(request.Resource)) return false;
+            if (busy || persistenceUncertain || string.IsNullOrWhiteSpace(request.TransactionId) || !IsValid(request.Resource)) return false;
             if (HasTransaction(request.TransactionId)) return true;
             busy = true;
             try
@@ -90,7 +115,7 @@ namespace Dreamy.Economy
 
         public bool TryExchange(ResourceExchangeRequest request)
         {
-            if (busy || string.IsNullOrWhiteSpace(request.TransactionId) || !IsValid(request.Cost) ||
+            if (busy || persistenceUncertain || string.IsNullOrWhiteSpace(request.TransactionId) || !IsValid(request.Cost) ||
                 request.Rewards == null || request.Rewards.Count == 0) return false;
             foreach (ResourceAmount reward in request.Rewards)
                 if (!IsValid(reward)) return false;
@@ -119,6 +144,7 @@ namespace Dreamy.Economy
 
         public RewardDeliveryResult Validate(IReadOnlyList<RewardDeliveryRequest> requests)
         {
+            if (persistenceUncertain) return RewardDeliveryResult.Pending(RewardDeliveryReason.PersistenceFailed);
             if (busy) return RewardDeliveryResult.Pending(RewardDeliveryReason.Busy);
             return ValidateCore(requests);
         }
@@ -132,8 +158,13 @@ namespace Dreamy.Economy
             {
                 if (!request.IsValid || !batchIds.Add(request.TransactionId))
                     return RewardDeliveryResult.Failed(RewardDeliveryReason.InvalidRequest);
-                if (request.Entry.KindId != CurrencyKind) return RewardDeliveryResult.Failed(RewardDeliveryReason.UnknownKind);
                 if (!ResourceId.TryParse(request.Entry.TargetId, out ResourceId id))
+                    return RewardDeliveryResult.Failed(RewardDeliveryReason.UnknownTarget);
+                if (rewardDefinitions.TryGetValue(id, out var definition))
+                {
+                    if (definition.KindId != request.Entry.KindId) return RewardDeliveryResult.Failed(RewardDeliveryReason.UnknownKind);
+                }
+                else if (request.Entry.KindId != CurrencyKind)
                     return RewardDeliveryResult.Failed(RewardDeliveryReason.UnknownTarget);
                 if (receipts.TryGetValue(request.TransactionId, out string fingerprint))
                 {
@@ -141,6 +172,8 @@ namespace Dreamy.Economy
                         return RewardDeliveryResult.Failed(RewardDeliveryReason.PayloadMismatch);
                     continue;
                 }
+                if (transactionReceipts.ContainsKey(request.TransactionId))
+                    return RewardDeliveryResult.Failed(RewardDeliveryReason.PayloadMismatch);
                 if (legacyTombstones.Contains(request.TransactionId))
                     return RewardDeliveryResult.Failed(RewardDeliveryReason.LegacyReceiptUnverifiable);
                 try { Add(next, new ResourceAmount(id, request.Entry.Amount)); }
@@ -151,6 +184,7 @@ namespace Dreamy.Economy
 
         public RewardDeliveryResult Deliver(RewardDeliveryRequest request)
         {
+            if (persistenceUncertain) return RewardDeliveryResult.Pending(RewardDeliveryReason.PersistenceFailed);
             if (busy) return RewardDeliveryResult.Pending(RewardDeliveryReason.Busy);
             busy = true;
             try
@@ -175,13 +209,116 @@ namespace Dreamy.Economy
             finally { busy = false; }
         }
 
-        private static bool IsValid(ResourceAmount amount) => amount.ResourceId.IsValid && amount.Amount > 0;
-        private bool HasTransaction(string id) => transactionIds.Contains(id) || receipts.ContainsKey(id);
+        public ResourceTransactionResult Spend(ResourceSpendRequest request) =>
+            Transact(request.TransactionId, request.ContextId, request.Costs, null, "spend");
 
-        private static void Add(Dictionary<ResourceId, long> target, ResourceAmount amount)
+        public ResourceTransactionResult Exchange(ResourceTransactionRequest request) =>
+            Transact(request.TransactionId, request.ContextId, request.Costs, request.Rewards, "exchange");
+
+        private ResourceTransactionResult Transact(string id, string context, IReadOnlyList<ResourceAmount> costs,
+            IReadOnlyList<ResourceAmount> rewards, string kind)
+        {
+            ResourceTransactionResult Result(ResourceTransactionStatus status, IReadOnlyList<ResourceDeficit> deficits = null,
+                string error = null) => new(status, id, deficits, error);
+            if (persistenceUncertain) return Result(ResourceTransactionStatus.PersistenceUncertain);
+            if (busy) return Result(ResourceTransactionStatus.Busy);
+            if (string.IsNullOrWhiteSpace(id)) return Result(ResourceTransactionStatus.InvalidRequest);
+            SortedDictionary<string, long> normalizedCosts;
+            SortedDictionary<string, long> normalizedRewards;
+            string fingerprint;
+            try
+            {
+                normalizedCosts = ResourceTransactionPayload.Normalize(costs);
+                normalizedRewards = kind == "spend" ? null : ResourceTransactionPayload.Normalize(rewards);
+                fingerprint = ResourceTransactionPayload.Fingerprint(kind, context, normalizedCosts, normalizedRewards);
+            }
+            catch (OverflowException) { return Result(ResourceTransactionStatus.Overflow); }
+            catch (ArgumentException) { return Result(ResourceTransactionStatus.InvalidRequest); }
+            busy = true;
+            try
+            {
+                if (transactionReceipts.TryGetValue(id, out ResourceTransactionReceipt receipt))
+                    return Result(receipt.Fingerprint == fingerprint ? ResourceTransactionStatus.AlreadyCommitted : ResourceTransactionStatus.PayloadMismatch);
+                if (receipts.ContainsKey(id)) return Result(ResourceTransactionStatus.PayloadMismatch);
+                if (legacyTombstones.Contains(id)) return Result(ResourceTransactionStatus.LegacyReceiptUnverifiable);
+                var deficits = new List<ResourceDeficit>();
+                foreach (var cost in normalizedCosts)
+                {
+                    var resource = new ResourceId(cost.Key);
+                    long available = GetBalance(resource);
+                    if (available < cost.Value) deficits.Add(new ResourceDeficit(resource, cost.Value, available));
+                }
+                if (deficits.Count > 0) return Result(ResourceTransactionStatus.InsufficientResources, deficits);
+                var previous = balances;
+                var next = new Dictionary<ResourceId, long>(balances);
+                foreach (var cost in normalizedCosts)
+                {
+                    var resource = new ResourceId(cost.Key);
+                    next[resource] -= cost.Value;
+                }
+                try
+                {
+                    if (normalizedRewards != null)
+                        foreach (var reward in normalizedRewards) Add(next, new ResourceAmount(new ResourceId(reward.Key), reward.Value));
+                }
+                catch (OverflowException) { return Result(ResourceTransactionStatus.Overflow); }
+                var candidate = CreateCandidate(next);
+                candidate.TransactionReceipts.Add(new ResourceTransactionReceipt
+                { TransactionId = id, Kind = kind, Fingerprint = fingerprint });
+                try { Commit(candidate, next); }
+                catch (Exception exception)
+                {
+                    // IDatasaveService alone cannot prove that a thrown Save did not commit.
+                    // Reload durable state before accepting another mutation. Load must bypass stale caches.
+                    try
+                    {
+                        var restored = new DatasaveResourceWallet(datasave, saveKey, transactionHistoryLimit: transactionHistoryLimit, rewardDefinitions: new List<ResourceRewardDefinition>(rewardDefinitions.Values));
+                        Publish(restored.data, restored.balances);
+                        if (!transactionReceipts.TryGetValue(id, out var recovered))
+                            return Result(ResourceTransactionStatus.PersistenceFailed, error: exception.GetType().Name);
+                        if (recovered.Fingerprint != fingerprint)
+                        {
+                            persistenceUncertain = true;
+                            return Result(ResourceTransactionStatus.PersistenceUncertain, error: "ReconciliationMismatch");
+                        }
+                    }
+                    catch (Exception reloadException)
+                    {
+                        persistenceUncertain = true;
+                        return Result(ResourceTransactionStatus.PersistenceUncertain, error: reloadException.GetType().Name);
+                    }
+                }
+                foreach (var pair in balances)
+                    if (!previous.TryGetValue(pair.Key, out long old) || old != pair.Value)
+                        NotifyCommittedBalanceChanged(pair.Key);
+                return Result(ResourceTransactionStatus.Committed);
+            }
+            finally { busy = false; }
+        }
+
+        private void NotifyCommittedBalanceChanged(ResourceId id)
+        {
+            var handlers = BalanceChanged;
+            if (handlers == null) return;
+            foreach (Action<ResourceBalanceChanged> handler in handlers.GetInvocationList())
+            {
+                try { handler(new ResourceBalanceChanged(id, GetBalance(id))); }
+                catch (Exception exception)
+                {
+                    try { NotificationFailed?.Invoke(exception); }
+                    catch (Exception) { /* Diagnostics cannot change commit outcome. */ }
+                }
+            }
+        }
+
+        private static bool IsValid(ResourceAmount amount) => amount.ResourceId.IsValid && amount.Amount > 0;
+        private bool HasTransaction(string id) => transactionIds.Contains(id) || receipts.ContainsKey(id) || transactionReceipts.ContainsKey(id);
+
+        private void Add(Dictionary<ResourceId, long> target, ResourceAmount amount)
         {
             target.TryGetValue(amount.ResourceId, out long current);
-            target[amount.ResourceId] = checked(current + amount.Amount);
+            target[amount.ResourceId] = rewardDefinitions.TryGetValue(amount.ResourceId, out var definition) && definition.Unique
+                ? 1 : checked(current + amount.Amount);
         }
 
         private EconomySaveData CreateCandidate(Dictionary<ResourceId, long> next)
@@ -189,10 +326,18 @@ namespace Dreamy.Economy
             var candidate = new EconomySaveData();
             foreach (KeyValuePair<ResourceId, long> pair in next)
                 candidate.Balances.Add(new ResourceBalanceSaveEntry { ResourceId = pair.Key.Value, Amount = pair.Value });
+            foreach (var import in data.InventoryImports)
+                candidate.InventoryImports.Add(new RewardReceiptSaveEntry { TransactionId = import.TransactionId, Fingerprint = import.Fingerprint });
             candidate.TransactionIds.AddRange(data.TransactionIds);
             candidate.LegacyDeliveryTombstones.AddRange(legacyTombstones);
             foreach (RewardReceiptSaveEntry receipt in data.DeliveryReceipts)
                 candidate.DeliveryReceipts.Add(new RewardReceiptSaveEntry { TransactionId = receipt.TransactionId, Fingerprint = receipt.Fingerprint });
+            foreach (ResourceTransactionReceipt receipt in data.TransactionReceipts)
+                candidate.TransactionReceipts.Add(new ResourceTransactionReceipt
+                {
+                    SchemaVersion = receipt.SchemaVersion, TransactionId = receipt.TransactionId,
+                    Kind = receipt.Kind, Fingerprint = receipt.Fingerprint
+                });
             return candidate;
         }
 
@@ -206,9 +351,19 @@ namespace Dreamy.Economy
 
         private void Commit(EconomySaveData candidate, Dictionary<ResourceId, long> next)
         {
-            datasave.Save(candidate, saveKey);
+            try { datasave.Save(candidate, saveKey); }
+            catch (Exception) { persistenceUncertain = true; throw; }
+            Publish(candidate, next);
+        }
+
+        private void Publish(EconomySaveData candidate, Dictionary<ResourceId, long> next)
+        {
             data = candidate;
             balances = next;
+            persistenceUncertain = false;
+            transactionReceipts.Clear();
+            foreach (ResourceTransactionReceipt receipt in data.TransactionReceipts)
+                transactionReceipts.Add(receipt.TransactionId, receipt);
             transactionIds.Clear();
             foreach (string id in data.TransactionIds) transactionIds.Add(id);
             legacyTombstones.Clear();
@@ -218,7 +373,6 @@ namespace Dreamy.Economy
                 receipts.Add(receipt.TransactionId, receipt.Fingerprint);
         }
 
-        private void NotifyBalanceChanged(ResourceId resourceId) =>
-            BalanceChanged?.Invoke(new ResourceBalanceChanged(resourceId, GetBalance(resourceId)));
+        private void NotifyBalanceChanged(ResourceId resourceId) => NotifyCommittedBalanceChanged(resourceId);
     }
 }

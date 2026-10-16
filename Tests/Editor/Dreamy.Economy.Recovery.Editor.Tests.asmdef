@@ -1,0 +1,27 @@
+{
+  "name": "Dreamy.Economy.Recovery.Editor.Tests",
+  "references": [
+    "Dreamy.Economy.Recovery.Unity",
+    "Dreamy.Economy.UI.Integration",
+    "Dreamy.Economy.Runtime",
+    "Dreamy.UI.Runtime",
+    "Dreamy.Core.Runtime",
+    "UniTask",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "autoReferenced": false
+}

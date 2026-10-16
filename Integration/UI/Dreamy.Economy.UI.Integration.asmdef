@@ -1,0 +1,11 @@
+{
+  "name": "Dreamy.Economy.UI.Integration",
+  "rootNamespace": "Dreamy.Economy.UI",
+  "references": [
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Economy.UI.Runtime",
+    "Dreamy.UI.Presentation",
+    "UniTask"
+  ],
+  "noEngineReferences": true
+}

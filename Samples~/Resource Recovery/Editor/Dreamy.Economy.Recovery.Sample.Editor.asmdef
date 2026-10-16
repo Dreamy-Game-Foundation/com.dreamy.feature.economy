@@ -1,0 +1,14 @@
+{
+  "name": "Dreamy.Economy.Recovery.Sample.Editor",
+  "references": [
+    "Dreamy.Economy.Recovery.Sample",
+    "Dreamy.Economy.Recovery.Unity",
+    "Dreamy.UI.Runtime",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI",
+    "Dreamy.Core.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

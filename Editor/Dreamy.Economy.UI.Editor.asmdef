@@ -2,9 +2,17 @@
   "name": "Dreamy.Economy.UI.Editor",
   "rootNamespace": "Dreamy.Economy.UI.Editor",
   "references": [
-    "Dreamy.Economy.UI.Runtime"
+    "Dreamy.Economy.UI.Runtime",
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Economy.UI.Integration",
+    "Dreamy.Economy.Recovery.Unity",
+    "Dreamy.UI.Runtime",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
-  "includePlatforms": ["Editor"],
+  "includePlatforms": [
+    "Editor"
+  ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,
