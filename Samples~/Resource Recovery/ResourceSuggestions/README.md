@@ -23,28 +23,34 @@ ResourceSuggestionPanel (UIPanel, CanvasGroup, UITweenPlayer)
           Later (Button, Image) / Label (TMP)
 ```
 
-Create one `ResourceSuggestionPanelPresentation(prefab, sharedBalances, acquisition)` per
-resource; register them in `ResourceRecoveryPresentationRouter`. The router selects one mapped
-currently missing resource in normalized cost order. No automatic sequence of popups is shown
-for multi-cost actions. A subsequent confirmed attempt can show the next missing resource.
+Register each concrete panel with `ResourceSuggestionInstaller.Install<TPanel>(factory,
+resourceId, address, sharedBalances, acquisition)`. Register the returned presentation in
+`ResourceRecoveryPresentationRouter`. The installer holds service dependencies and addresses;
+it does not hold prefab references. Register game-owned prefabs in Addressables under those keys.
 
-The presenter snapshots/normalizes costs, refreshes the selected balance, blocks duplicate
-requests and ignores Shop when funded/unavailable. Shop detaches view listeners and awaits
-close before opening the acquisition gateway with the selected ResourceId, current missing
-amount, context and all current deficits. Later/Back closes without navigation. Owner
-cancellation closes UI/cancels pending navigation. Return never auto-retries spend or grants.
+`CoinSuggestionPanel` and `GemSuggestionPanel` inherit the shared view. They have distinct types
+because both `PanelManager` and `PanelPresenterFactory` identify views by their concrete type.
+Do not register two resource prefabs using the same concrete view type.
 
-All variants use the same component type. Presentation deliberately creates the chosen prefab
-per opening, calls Init/PostInit, and lets PanelManager own Popup layer/stack/Back. It does not
-use Create<T>'s type-only cache, which could substitute Coin for Gem. Panels are not cached;
-closing destroys them. Keep the router at the composition root to serialize replacement.
+The presentation snapshots/normalizes costs into a `ResourceSuggestionRequest`, creates the view
+through `PanelManager.Create<TPanel>(address)`, prepares the request before `Show`, and awaits the
+choice. The factory creates a `ResourceSuggestionPresenter : IPanelPresenter` for that opening.
+The presenter renders balances and handles Acquire/Later intent; it detaches when the UI host
+disposes it on Hide/disable/destroy. The one-shot request preserves an accepted Acquire through
+presenter disposal. The presentation awaits close before opening acquisition, recalculates all
+current deficits, and passes the selected resource, missing amount and source context.
 
-Sandbox: GameInstaller.resourceSuggestionPrefabs contains game-owned Coin/Gem variants under
-Assets/_Project/Prefabs/UI/ResourceSuggestions. Custom presentation components remain supported;
-duplicate resource IDs across both maps fail configuration. The standalone recovery demo now
-routes Coin/Gem to these panels; the older multi-deficit UI remains an optional fallback.
+Later/Back closes without navigation. Owner cancellation closes UI/cancels pending navigation.
+Return never auto-retries spend or grants. Panels are not cached; closing destroys them through
+UIPanel. The router serializes replacement requests, even when they select different resources.
 
-The builder menu `Dreamy/Economy/Create Single Resource Suggestion Prefab` creates a new base
-under Assets and refuses to overwrite by default. `CreateVariant` creates a resource variant.
-Replace placeholder colors/text in game-owned variants. Views only publish intent; persistence,
-purchasing, navigation and localization ownership remain with the host.
+The sandbox registers `Panel/CoinSuggestionPanel.prefab` and `Panel/GemSuggestionPanel.prefab`
+for the game-owned variants under `Assets/_Project/Prefabs/UI/ResourceSuggestions`.
+`GameInstaller` composes these routes and registers presenters without prefab suggestion fields.
+Custom presentation components remain supported; duplicate resource IDs fail configuration.
+The standalone recovery demo owns its own factory and uses the same addresses. Importing the
+sample alone does not register Addressables entries; configure these keys for a standalone consumer.
+
+For authored changes, edit the prefab variants through Unity MCP and preserve their base layout,
+SafeArea, serialized bindings and GUIDs. `Tools/Dreamy/Sandbox/Validate Resource Suggestion Panels`
+only validates typed project prefabs and addresses; it does not generate or attach prefabs.

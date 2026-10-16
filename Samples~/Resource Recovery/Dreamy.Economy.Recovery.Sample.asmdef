@@ -3,10 +3,12 @@
   "rootNamespace": "Dreamy.Economy.Samples",
   "references": [
     "Dreamy.Economy.Runtime",
+    "Dreamy.Core.Runtime",
     "Dreamy.Datasave.Runtime",
     "Dreamy.Economy.UI.Integration",
     "Dreamy.Economy.Recovery.Unity",
     "Dreamy.UI.Runtime",
+    "Dreamy.UI.Presentation",
     "UniTask",
     "Unity.TextMeshPro",
     "UnityEngine.UI"

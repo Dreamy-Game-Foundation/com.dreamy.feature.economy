@@ -1,6 +1,6 @@
 {
   "name": "com.dreamy.feature.economy",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "displayName": "Dreamy Economy Contracts",
   "description": "Shared persistent resource and inventory owner, idempotent reward destinations, grants, spend/exchange and resource recovery contracts.",
   "unity": "6000.0",

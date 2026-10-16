@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0] - 2026-10-16
+
+- Load resource suggestion panels by address through PanelManager; register typed Coin/Gem presenters with PanelPresenterFactory. Remove direct prefab instantiation from suggestion presentation.
+- Separate one-shot request state and navigation from the panel presenter lifecycle so accepted Acquire survives popup disposal and waits for close before navigation.
+- Preserve prefab GUIDs, SafeArea and UI bindings during the Unity MCP migration; update standalone sample composition and integration documentation.
+- Breaking migration: replace ResourceSuggestionPanelPresentation(prefab, ...) with ResourceSuggestionInstaller.Install<TPanel>(factory, resource, address, balances, acquisition). ResourceSuggestionPresenter now implements IPanelPresenter and takes ResourceSuggestionRequest. Use a distinct concrete panel type per resource and register its address.
+- Validation in the sandbox: 90 managed tests, 17 recovery EditMode tests and 5 addressable popup PlayMode tests passed; Unity Console reported no errors.
+
 ## [0.5.0] - 2026-10-16
 
 Single-resource panel follow-up (2026-10-16): add resource-specific plain-color Coin/Gem

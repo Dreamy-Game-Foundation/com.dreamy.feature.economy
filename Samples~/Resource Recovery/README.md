@@ -2,7 +2,7 @@
 
 Default Coin/Gem sample flow uses one prefab per resource with Shop/Later, plain color UI and
 no icons. See [prefab structure and wiring](ResourceSuggestions/README.md).
-`ResourceSuggestionPresenter` closes before navigation and never auto-spends on return.
+`ResourceSuggestionPanelPresentation<TPanel>` closes before navigation and never auto-spends on return.
 The multi-deficit panel remains available as a fallback.
 
 # Resource Recovery demo

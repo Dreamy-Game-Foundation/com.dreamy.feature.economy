@@ -6,6 +6,7 @@
     "Dreamy.Economy.UI.Runtime",
     "Dreamy.Economy.UI.Integration",
     "Dreamy.UI.Runtime",
+    "Dreamy.UI.Presentation",
     "Unity.TextMeshPro",
     "UnityEngine.UI",
     "UniTask",

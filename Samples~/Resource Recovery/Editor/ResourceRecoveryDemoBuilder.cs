@@ -54,11 +54,6 @@ namespace Dreamy.Economy.Samples.Editor
                 var coin=Button("CoinTab",shopContent.transform,"Coin tab");var gem=Button("GemTab",shopContent.transform,"Gem tab");var back=Button("Return",shopContent.transform,"Return without purchase");
                 var destination=shop.AddComponent<RecoveryDemoDestination>();Set(destination,"title",title);Set(destination,"coinTab",coin);Set(destination,"gemTab",gem);Set(destination,"returnButton",back);shop.SetActive(false);
                 var demo=canvas.AddComponent<ResourceRecoveryDemo>();Set(demo,"panel",panel.GetComponent<Dreamy.Economy.UI.NotEnoughResourcesPanel>());Set(demo,"destination",destination);
-                var settings = new SerializedObject(demo);
-                var suggestions = settings.FindProperty("suggestionPrefabs"); suggestions.arraySize = 2;
-                suggestions.GetArrayElementAtIndex(0).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Dreamy.Economy.UI.ResourceSuggestionPanel>(root + "/ResourceSuggestions/CoinSuggestionPanel.prefab");
-                suggestions.GetArrayElementAtIndex(1).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Dreamy.Economy.UI.ResourceSuggestionPanel>(root + "/ResourceSuggestions/GemSuggestionPanel.prefab");
-                settings.ApplyModifiedPropertiesWithoutUndo();
                 Set(demo,"silentButton",silent);Set(demo,"promptButton",prompt);Set(demo,"multiButton",multi);Set(demo,"directButton",direct);Set(demo,"grantButton",grant);Set(demo,"statusText",status);
                 new GameObject("EventSystem",typeof(EventSystem),typeof(StandaloneInputModule));
                 EditorSceneManager.SaveScene(scene,root + "/ResourceRecoveryDemo.unity");

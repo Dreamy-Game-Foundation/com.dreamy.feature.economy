@@ -1,5 +1,4 @@
 using System;
-using Cysharp.Threading.Tasks;
 
 namespace Dreamy.Economy.UI
 {
@@ -21,8 +20,6 @@ namespace Dreamy.Economy.UI
     {
         event Action AcquireRequested;
         event Action LaterRequested;
-        void Open();
         void Render(ResourceSuggestionState state);
-        UniTask CloseAsync();
     }
 }

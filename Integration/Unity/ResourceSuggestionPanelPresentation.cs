@@ -3,53 +3,77 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Dreamy.UI;
-using UnityEngine;
 
 namespace Dreamy.Economy.UI
 {
-    public sealed class ResourceSuggestionPanelPresentation : IInsufficientResourcesPresentation
+    /// <summary>Owns the recovery session across popup disposal and acquisition navigation.</summary>
+    public sealed class ResourceSuggestionPanelPresentation<TPanel> : IInsufficientResourcesPresentation
+        where TPanel : ResourceSuggestionPanel
     {
-        private readonly ResourceSuggestionPanel prefab;
+        private readonly ResourceId resource;
+        private readonly string address;
         private readonly IResourceBalanceSource balances;
         private readonly ResourceAcquisitionCoordinator acquisition;
         private bool busy;
-        public ResourceSuggestionPanelPresentation(ResourceSuggestionPanel prefab,
+
+        public ResourceSuggestionPanelPresentation(ResourceId resource, string address,
             IResourceBalanceSource balances, ResourceAcquisitionCoordinator acquisition)
         {
-            this.prefab = prefab != null ? prefab : throw new ArgumentNullException(nameof(prefab));
+            if (!resource.IsValid) throw new ArgumentException("A resource is required.", nameof(resource));
+            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentException("A panel address is required.", nameof(address));
+            this.resource = resource;
+            this.address = address;
             this.balances = balances ?? throw new ArgumentNullException(nameof(balances));
             this.acquisition = acquisition ?? throw new ArgumentNullException(nameof(acquisition));
-            _ = prefab.ResourceId; // Fail invalid authoring at composition time.
         }
 
         public async UniTask<ResourceRecoveryStatus> ShowAsync(IReadOnlyList<ResourceAmount> costs, string contextId, CancellationToken token)
         {
             if (token.IsCancellationRequested) return ResourceRecoveryStatus.Cancelled;
             if (busy) return ResourceRecoveryStatus.Busy;
-            if (prefab == null || !PanelManager.HasInstance) return ResourceRecoveryStatus.PresentationUnavailable;
+            var request = new ResourceSuggestionRequest(resource, costs, contextId);
+            if (request.Required == 0 || balances.GetBalance(resource) >= request.Required) return ResourceRecoveryStatus.None;
+            if (!PanelManager.HasInstance) return ResourceRecoveryStatus.PresentationUnavailable;
             busy = true;
-            ResourceSuggestionPanel panel = null;
+            TPanel panel = null;
             try
             {
-                // Registration/layers/Back remain managed by PanelManager. Creation is per prefab,
-                // because Create<T> caches only by type and would otherwise reuse the Coin view for Gem.
-                panel = UnityEngine.Object.Instantiate(prefab, PanelManager.Instance.GetLayerRoot(UILayer.Popup));
-                await panel.Init();
-                await panel.PostInit();
+                panel = await PanelManager.Instance.Create<TPanel>(address);
                 token.ThrowIfCancellationRequested();
-                using var presenter = new ResourceSuggestionPresenter(prefab.ResourceId, balances, panel, acquisition);
-                return await presenter.ShowAsync(costs, contextId, token);
+                panel.Prepare(request);
+                bool acquire;
+                // Destruction cancels only the UI phase. Deliberate close must not cancel navigation.
+                using (var ui = CancellationTokenSource.CreateLinkedTokenSource(token, panel.GetCancellationTokenOnDestroy()))
+                {
+                    await panel.Show();
+                    acquire = await request.WaitForChoiceAsync(ui.Token);
+                }
+                await panel.CloseAsync();
+                token.ThrowIfCancellationRequested();
+                if (!acquire) return ResourceRecoveryStatus.Cancelled;
+                long missing = request.Required - balances.GetBalance(resource);
+                if (missing <= 0) return ResourceRecoveryStatus.None;
+                var deficits = new List<ResourceDeficit>();
+                foreach (var cost in request.Costs)
+                {
+                    long available = balances.GetBalance(cost.ResourceId);
+                    if (available < cost.Amount) deficits.Add(new ResourceDeficit(cost.ResourceId, cost.Amount, available));
+                }
+                var result = await acquisition.OpenAsync(
+                    new ResourceAcquisitionRequest(resource, missing, request.ContextId, deficits), token);
+                return result switch
+                {
+                    ResourceAcquisitionResult.Returned => ResourceRecoveryStatus.Returned,
+                    ResourceAcquisitionResult.Cancelled => ResourceRecoveryStatus.Cancelled,
+                    ResourceAcquisitionResult.Busy => ResourceRecoveryStatus.Busy,
+                    _ => ResourceRecoveryStatus.Failed
+                };
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested)
-            { return ResourceRecoveryStatus.Cancelled; }
+            catch (OperationCanceledException) { return ResourceRecoveryStatus.Cancelled; }
             finally
             {
                 try { if (panel != null) await panel.CloseAsync(); }
-                finally
-                {
-                    if (panel != null) { if (PanelManager.HasInstance) PanelManager.Instance.Unregister(panel); UnityEngine.Object.Destroy(panel.gameObject); }
-                    busy = false;
-                }
+                finally { busy = false; }
             }
         }
     }

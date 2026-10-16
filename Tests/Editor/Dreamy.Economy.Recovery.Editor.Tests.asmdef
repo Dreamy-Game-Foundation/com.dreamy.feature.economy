@@ -5,6 +5,7 @@
     "Dreamy.Economy.UI.Integration",
     "Dreamy.Economy.Runtime",
     "Dreamy.UI.Runtime",
+    "Dreamy.UI.Presentation",
     "Dreamy.Core.Runtime",
     "UniTask",
     "UnityEngine.UI",

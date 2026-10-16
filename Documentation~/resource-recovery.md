@@ -138,4 +138,4 @@ The harness compiles actual managed sources against sandbox references and execu
 
 ## One authored suggestion panel per resource
 
-See `Samples~/Resource Recovery/ResourceSuggestions/README.md` for the default Coin/Gem variants, hierarchy and composition. Bind ResourceSuggestionPanelPresentation instances in ResourceRecoveryPresentationRouter. The view has one resource, message and Shop/Later; it closes before gateway navigation. Use this for game-specific single-resource prompts. The multi-deficit panel above is an optional fallback.
+See `Samples~/Resource Recovery/ResourceSuggestions/README.md` for the default Coin/Gem variants, hierarchy and composition. Register typed panels with `ResourceSuggestionInstaller.Install<TPanel>` and bind the returned presentations in `ResourceRecoveryPresentationRouter`. PanelManager loads addresses and the presenter factory owns each opening; installers do not require suggestion prefab references. The view has one resource, message and Shop/Later; it closes before gateway navigation. Use this for game-specific single-resource prompts. The multi-deficit panel above is an optional fallback.

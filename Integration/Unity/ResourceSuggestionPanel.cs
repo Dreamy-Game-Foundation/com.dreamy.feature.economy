@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Dreamy.Economy.UI
 {
     // Message, colors and button labels are authored in the resource prefab variant.
-    public sealed class ResourceSuggestionPanel : UIPanel, IResourceSuggestionView
+    public class ResourceSuggestionPanel : UIPanel, IResourceSuggestionView
     {
         [SerializeField] private string resourceId;
         [SerializeField] private Button acquireButton;
@@ -20,20 +20,34 @@ namespace Dreamy.Economy.UI
         public ResourceId ResourceId => new(resourceId);
         public override UILayer Layer => UILayer.Popup;
         public override bool CanBack => true;
-        // Each opening instantiates the selected resource's prefab, avoiding PanelManager's type cache.
         public override bool CanCache => false;
         public event Action AcquireRequested;
         public event Action LaterRequested;
 
-        private void Awake() => Wire();
+        public ResourceSuggestionRequest Request { get; private set; }
+        public void Prepare(ResourceSuggestionRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request.ResourceId != ResourceId) throw new ArgumentException("Suggestion panel/resource mismatch.", nameof(request));
+            Request = request;
+        }
+
+        protected virtual void Awake() => Wire();
         private void Wire()
         {
             if (wired) return;
             wired = true;
             acquireButton.onClick.AddListener(Acquire);
             laterButton.onClick.AddListener(Later);
-            OnPostHide += Later;
+            OnPreHide += Hiding;
+            OnPostHide += Hidden;
         }
+        private void Hiding()
+        {
+            closing ??= new UniTaskCompletionSource();
+            Later();
+        }
+        private void Hidden() => closing?.TrySetResult();
         private void Acquire() => AcquireRequested?.Invoke();
         private void Later() => LaterRequested?.Invoke();
         public void Open()
@@ -72,9 +86,11 @@ namespace Dreamy.Economy.UI
             {
                 acquireButton.onClick.RemoveListener(Acquire);
                 laterButton.onClick.RemoveListener(Later);
-                OnPostHide -= Later;
+                OnPreHide -= Hiding;
+                OnPostHide -= Hidden;
             }
             Later();
+            closing?.TrySetResult();
             base.OnDestroy();
         }
     }

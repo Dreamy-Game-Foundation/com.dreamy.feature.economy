@@ -1,6 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Dreamy.Datasave;
+using Dreamy.UI;
 using Dreamy.Economy.UI;
 using TMPro;
 using UnityEngine;
@@ -12,7 +13,8 @@ namespace Dreamy.Economy.Samples
     public sealed class ResourceRecoveryDemo : MonoBehaviour
     {
         [SerializeField] private NotEnoughResourcesPanel panel;
-        [SerializeField] private ResourceSuggestionPanel[] suggestionPrefabs = Array.Empty<ResourceSuggestionPanel>();
+        [SerializeField] private string coinSuggestionAddress = "Panel/CoinSuggestionPanel.prefab";
+        [SerializeField] private string gemSuggestionAddress = "Panel/GemSuggestionPanel.prefab";
         [SerializeField] private RecoveryDemoDestination destination;
         [SerializeField] private Button silentButton;
         [SerializeField] private Button promptButton;
@@ -20,6 +22,7 @@ namespace Dreamy.Economy.Samples
         [SerializeField] private Button directButton;
         [SerializeField] private Button grantButton;
         [SerializeField] private TMP_Text statusText;
+        private PanelPresenterFactory suggestionFactory;
         private DatasaveResourceWallet wallet;
         private NotEnoughResourcesPresenter presenter;
         private ResourceActionFlow flow;
@@ -39,12 +42,15 @@ namespace Dreamy.Economy.Samples
             acquisition = new ResourceAcquisitionCoordinator(destination);
             presenter = new NotEnoughResourcesPresenter(wallet, panel, acquisition);
             var routes = new System.Collections.Generic.Dictionary<ResourceId, IInsufficientResourcesPresentation>();
-            foreach (var prefab in suggestionPrefabs)
-            {
-                if (prefab == null || routes.ContainsKey(prefab.ResourceId))
-                    throw new InvalidOperationException("Suggestion prefabs must be assigned and have unique resource IDs.");
-                routes.Add(prefab.ResourceId, new ResourceSuggestionPanelPresentation(prefab, wallet, acquisition));
-            }
+            // Standalone scene owns its factory; game integration registers in the existing root factory.
+            if (PanelManager.Instance.PresenterFactory != null)
+                throw new InvalidOperationException("Run the recovery demo standalone; a game presenter factory is already installed.");
+            suggestionFactory = new PanelPresenterFactory();
+            routes.Add(Coin, ResourceSuggestionInstaller.Install<CoinSuggestionPanel>(
+                suggestionFactory, Coin, coinSuggestionAddress, wallet, acquisition));
+            routes.Add(Gem, ResourceSuggestionInstaller.Install<GemSuggestionPanel>(
+                suggestionFactory, Gem, gemSuggestionAddress, wallet, acquisition));
+            PanelManager.Instance.PresenterFactory = suggestionFactory;
             flow = new ResourceActionFlow(wallet, new ResourceRecoveryPresentationRouter(wallet, routes, presenter));
             panel.Close(); destination.gameObject.SetActive(false);
             silentButton.onClick.AddListener(Silent);
@@ -82,6 +88,8 @@ namespace Dreamy.Economy.Samples
             statusText.text = $"Coin: {wallet.GetBalance(Coin)}   Gem: {wallet.GetBalance(Gem)}\n{message}";
         private void OnDestroy()
         {
+            if (PanelManager.HasInstance && ReferenceEquals(PanelManager.Instance.PresenterFactory, suggestionFactory))
+                PanelManager.Instance.PresenterFactory = null;
             presenter?.Dispose();
             silentButton.onClick.RemoveListener(Silent); promptButton.onClick.RemoveListener(Prompt);
             multiButton.onClick.RemoveListener(Multi); directButton.onClick.RemoveListener(Direct);
