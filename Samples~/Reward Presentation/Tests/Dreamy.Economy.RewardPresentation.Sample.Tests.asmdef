@@ -1,0 +1,28 @@
+{
+  "name": "Dreamy.Economy.RewardPresentation.Sample.Tests",
+  "references": [
+    "Dreamy.Economy.RewardPresentation.Sample",
+    "Dreamy.Economy.UI.Integration",
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Datasave.Runtime",
+    "Dreamy.UI.Runtime",
+    "Dreamy.Core.Runtime",
+    "UniTask",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "autoReferenced": false
+}

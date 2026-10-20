@@ -1,0 +1,17 @@
+{
+  "name": "Dreamy.Economy.RewardPresentation.Sample.Editor",
+  "references": [
+    "Dreamy.Economy.RewardPresentation.Sample",
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Economy.UI.Runtime",
+    "Dreamy.UI.Runtime",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI",
+    "Dreamy.Core.Runtime",
+    "Dreamy.Economy.UI.Integration",
+    "UniTask"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

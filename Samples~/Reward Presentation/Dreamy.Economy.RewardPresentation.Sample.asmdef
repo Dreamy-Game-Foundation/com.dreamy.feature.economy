@@ -1,0 +1,16 @@
+{
+  "name": "Dreamy.Economy.RewardPresentation.Sample",
+  "rootNamespace": "Dreamy.Economy.RewardSample",
+  "references": [
+    "Dreamy.Economy.Runtime",
+    "Dreamy.Economy.UI.Runtime",
+    "Dreamy.Economy.UI.Integration",
+    "Dreamy.Datasave.Runtime",
+    "Dreamy.UI.Runtime",
+    "Dreamy.UI.Presentation",
+    "UniTask",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI",
+    "Dreamy.Core.Runtime"
+  ]
+}

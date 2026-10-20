@@ -1,5 +1,7 @@
 # Dreamy Economy Contracts
 
+Reusable reward panels, optional no-panel claiming and feature adapters: [Reward Presentation](Documentation~/reward-presentation.md).
+
 Spend/exchange nhiều tài nguyên và recovery tùy chọn: [API, migration và sample](Documentation~/resource-recovery.md).
 
 ## Bắt đầu dùng currency và reward
