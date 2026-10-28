@@ -1,3 +1,4 @@
+using System;
 using Dreamy.Core;
 using TMPro;
 using UnityEngine;
@@ -19,6 +20,32 @@ namespace Dreamy.Economy.UI
         private IResourceBalanceSource balanceSource;
         private ResourceId currentResourceId;
         private ResourceAmountFormat amountFormat = ResourceAmountFormat.Compact;
+        private RefreshDeferralState refreshDeferral;
+
+        private sealed class RefreshDeferralState
+        {
+            public ResourceUIHolder Owner;
+            public int Count;
+        }
+
+        private sealed class RefreshDeferral : IDisposable
+        {
+            private RefreshDeferralState state;
+
+            public RefreshDeferral(RefreshDeferralState state) => this.state = state;
+
+            public void Dispose()
+            {
+                RefreshDeferralState released = state;
+                state = null;
+                if (released == null || released.Owner == null) return;
+                if (--released.Count != 0) return;
+                ResourceUIHolder owner = released.Owner;
+                released.Owner = null;
+                owner.refreshDeferral = null;
+                owner.RefreshBalance();
+            }
+        }
 
         public ResourceId ResourceId => currentResourceId;
         public Transform IconTarget => iconImage != null ? iconImage.transform : transform;
@@ -27,6 +54,12 @@ namespace Dreamy.Economy.UI
         private void OnEnable()
         {
             ApplyResource(resourceId);
+            if (balanceProvider != null)
+            {
+                Bind(balanceProvider);
+                return;
+            }
+
             if (ServiceLocator.TryGet<IResourceBalanceProvider>(out IResourceBalanceProvider provider))
             {
                 Bind(provider);
@@ -37,22 +70,32 @@ namespace Dreamy.Economy.UI
                 wallet is IResourceBalanceProvider walletProvider)
             {
                 Bind(walletProvider);
+                return;
             }
+
+            RefreshBalance();
         }
 
-        private void OnDisable() => Unbind();
+        private void OnDisable()
+        {
+            DetachBalanceSource();
+            InvalidateRefreshDeferral();
+        }
+
+        private void OnDestroy() => Unbind();
 
         public void Bind(IResourceBalanceProvider provider)
         {
             Unbind();
             balanceProvider = provider;
-            balanceSource = autoRefresh ? provider as IResourceBalanceSource : null;
+            balanceSource = autoRefresh && isActiveAndEnabled ? provider as IResourceBalanceSource : null;
             if (balanceSource != null) balanceSource.BalanceChanged += OnBalanceChanged;
             RefreshBalance();
         }
 
         public void SetResource(string value)
         {
+            InvalidateRefreshDeferral();
             resourceId = value;
             ApplyResource(value);
             RefreshBalance();
@@ -60,9 +103,26 @@ namespace Dreamy.Economy.UI
 
         public void RefreshBalance()
         {
-            if (amountText == null) return;
+            if (refreshDeferral != null || amountText == null) return;
             long balance = balanceProvider?.GetBalance(currentResourceId) ?? 0L;
             amountText.text = ResourceAmountFormatter.Format(balance, amountFormat);
+        }
+
+        /// <summary>
+        /// Holds balance text until all current scopes are disposed, then reads the latest
+        /// provider balance. Create before mutating the wallet and dispose on completion or
+        /// cancellation. Use on the Unity thread. Disable, destroy, Unbind, Bind and
+        /// SetResource invalidate all outstanding scopes; old tokens then have no effect.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The holder is disabled or unbound.</exception>
+        public IDisposable DeferRefresh()
+        {
+            if (!isActiveAndEnabled || balanceProvider == null)
+                throw new InvalidOperationException("Bind and enable the resource holder before deferring refresh.");
+
+            if (refreshDeferral == null) refreshDeferral = new RefreshDeferralState { Owner = this };
+            refreshDeferral.Count++;
+            return new RefreshDeferral(refreshDeferral);
         }
 
         private void ApplyResource(string value)
@@ -99,11 +159,26 @@ namespace Dreamy.Economy.UI
             }
         }
 
-        private void Unbind()
+        /// <summary>Detaches the provider and invalidates all outstanding refresh scopes.</summary>
+        public void Unbind()
+        {
+            DetachBalanceSource();
+            InvalidateRefreshDeferral();
+            balanceProvider = null;
+        }
+
+        private void DetachBalanceSource()
         {
             if (balanceSource != null) balanceSource.BalanceChanged -= OnBalanceChanged;
             balanceSource = null;
-            balanceProvider = null;
+        }
+
+        private void InvalidateRefreshDeferral()
+        {
+            if (refreshDeferral == null) return;
+            // Outstanding tokens must not retain this holder or touch a newer binding.
+            refreshDeferral.Owner = null;
+            refreshDeferral = null;
         }
     }
 }

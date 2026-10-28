@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 0.8.0 candidate
+
+- Add per-holder `ResourceUIHolder.DeferRefresh()` scopes. Automatic balance events remain subscribed; both events and explicit refresh wait until the final scope releases and reads the current provider balance. Repeated disposal is safe.
+- Invalidate old scopes on disable, destroy, unbind, bind and resource selection. Disabled holders detach events and retain their provider for resynchronization on enable; unbind/destroy release the provider. Old tokens cannot affect newer scopes.
+- Preserve serialized fields and legacy `autoRefresh=false` manual mode. Add public `Unbind()` for explicit binding cleanup; no reward, save or Feedback logic enters the holder.
+- Document before-mutation acquisition, owner cancellation/close cleanup and Home/Shop migration. Add focused PlayMode coverage for balance, nesting, lifecycle and async cleanup. Minor version bump reflects additive public APIs; no prefab/save migration is required.
+
 ## Unreleased — 0.7.0 candidate
 
 - Add engine-independent Reward Presentation contracts, scoped claim snapshots, FIFO queue and cancellation-safe sessions. Confirm waits for explicit Claim; Granted Notice never grants; RewardClaimFlow supports no-panel claiming.

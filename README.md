@@ -80,10 +80,113 @@ Import Resource Holders; đặt Prefabs/CoinHolder.prefab hoặc GemHolder.prefa
 
 Holder resolve IResourceBalanceProvider từ ServiceLocator. Có thể gọi ResourceUIHolder.Bind(provider) để inject; provider observable cập nhật UI ngay khi balance thay đổi. Code dùng holder cần Dreamy.Economy.UI.Runtime.
 
-Holder mặc định bật `Auto Refresh` và nghe thay đổi số dư. Tắt tùy chọn này
-trên holder do presenter điều khiển: wallet đổi data, presenter chờ effect rồi gọi
-`RefreshBalance()` để cập nhật view. Bind/mở lại vẫn đọc số dư mới nhất.
+Holder mặc định bật `Auto Refresh` và nghe thay đổi số dư. Giữ bật để Home
+đồng bộ cả khi Shop thay đổi wallet mà navigation chỉ HideTween/ShowTween.
+`autoRefresh=false` vẫn là manual mode: không subscribe balance events, chỉ cập
+nhật khi bind, enable, đổi resource, gọi `RefreshBalance()` hoặc release scope cuối.
+Không cần thay serialized fields hay prefab references.
 `IconTarget` và `Icon` cung cấp điểm đến/sprite mà không làm Economy phụ thuộc Feedback.
+
+### Trì hoãn hiển thị số dư (0.8.0)
+
+`IDisposable ResourceUIHolder.DeferRefresh()` giữ nguyên amount text trên **một
+instance holder**. Với auto refresh bật, holder vẫn nghe balance events; cả event
+và `RefreshBalance()` đều không đổi text trong scope. Nhiều scope có thể chồng
+nhau và release theo mọi thứ tự. Release scope cuối đọc số dư mới nhất từ provider,
+kể cả spend/tăng/giảm của luồng khác; không dùng snapshot hoặc cộng reward. Dispose
+lặp an toàn. Đây là cơ chế chờ toàn bộ scope trên holder, chưa phải tăng số theo
+từng icon hoặc từng transaction.
+
+**Tạo scope TRƯỚC claim/purchase làm wallet thay đổi.** Nếu đợi kết quả thành công
+rồi mới tạo scope thì quá muộn: balance event đã phát và text có thể đã cập nhật.
+Holder phải được bind và enabled trước khi tạo scope, nếu không API ném
+`InvalidOperationException`. Gọi API và dispose trên Unity main thread.
+
+Ví dụ sau thuộc presenter của consumer. Các delegate đại diện cho API claim và
+hiệu ứng của game; Economy không grant/spend/save hoặc chạy icon fly. Owner phải
+gọi `Close()` từ hook đóng/hủy panel, kể cả khi panel chỉ ẩn bằng tween. Owner chỉ
+được giải phóng sau khi đã cancel/cleanup và quan sát kết quả task đang chạy.
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Dreamy.Economy.UI;
+
+public sealed class RewardDisplayOwner
+{
+    private CancellationTokenSource pendingCancellation;
+    private IDisposable pendingScope;
+
+    public async Task ClaimAndPresentAsync(
+        ResourceUIHolder target,
+        Func<CancellationToken, Task<bool>> claimAsync,
+        Func<CancellationToken, Task> playEffectAsync)
+    {
+        Close(); // Clean up this owner's previous presentation, if any.
+        var scope = target.DeferRefresh(); // BEFORE claim, not after its result.
+        var cancellation = new CancellationTokenSource();
+        pendingCancellation = cancellation;
+        pendingScope = scope;
+        try
+        {
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (await claimAsync(cancellation.Token))
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                await playEffectAsync(cancellation.Token);
+            }
+        }
+        finally
+        {
+            // Success, failure, exception and cancellation all release the hold.
+            scope.Dispose();
+            if (ReferenceEquals(pendingScope, scope))
+            {
+                pendingScope = null;
+                pendingCancellation = null;
+            }
+            cancellation.Dispose();
+        }
+    }
+
+    public void Close()
+    {
+        var cancellation = pendingCancellation;
+        var scope = pendingScope;
+        pendingCancellation = null;
+        pendingScope = null;
+        try { cancellation?.Cancel(); }
+        finally { scope?.Dispose(); } // Release immediately, even if async is pending.
+    }
+}
+```
+
+Caller phải await task và xử lý `OperationCanceledException`/exception theo owner
+của mình. Claim/effect phải tôn trọng cancellation và dọn tween/callback do chúng
+sở hữu; không để callback cũ tiếp tục mutate UI sau khi panel đóng. Chỉ `Dispose`
+trong finally lúc task hoàn thành là chưa đủ nếu task vẫn chạy khi panel đóng.
+Cancellation sau khi wallet đã commit không hoàn tác phần thưởng hoặc purchase.
+
+Disable, destroy, `Unbind()`, mọi lần `Bind(...)` (kể cả cùng provider) và
+`SetResource(...)` (kể cả cùng ID) vô hiệu hóa toàn bộ scope cũ. Token cũ dispose
+sẽ không refresh hay release scope mới. Disable gỡ subscription nhưng giữ provider;
+enable bind lại và đọc balance mới nhất. Bind khi disabled chưa subscribe, enable
+mới subscribe. `Unbind()`/destroy gỡ subscription và xóa provider; unbind giữ text
+hiện tại đến lần refresh/bind kế tiếp. Enable khi không có binding sẽ thử resolve
+ServiceLocator. Không dùng rebind/SetResource như refresh callback trong hiệu ứng;
+chúng bắt đầu binding/resource mới và kết thúc mọi hold cũ.
+
+Consumer migration:
+
+- Home: chuyển prefab/instance đang tắt `autoRefresh` sang bật. Không dùng OnEnable
+  làm cách sửa stale balance khi navigation chỉ chạy tween.
+- Daily/Missions dùng holder Home: lấy scope từ **holder Home**, trước claim;
+  giữ đến khi effect hoàn tất, cancel, exception hoặc panel đóng.
+- Shop dùng holder Shop: chỉ defer **holder Shop** trước purchase. Home tiếp tục
+  auto refresh, nên đóng Shop không để lại số dư cũ.
+- Owner của mỗi luồng theo dõi và release scope của chính mình; các luồng cùng
+  holder phải chờ toàn bộ scope, các holder khác nhau không chặn nhau.
 
 Holder là HUD component, không phải UIPanel. Nếu tải bằng Addressables, load GameObject, instantiate dưới Canvas rồi bind provider; không gọi PanelManager.Show<ResourceUIHolder>().
 ## Import sample
