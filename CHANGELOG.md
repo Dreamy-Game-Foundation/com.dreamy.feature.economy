@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 0.8.0 candidate
+## [0.8.0] - 2026-10-28
 
 - Add per-holder `ResourceUIHolder.DeferRefresh()` scopes. Automatic balance events remain subscribed; both events and explicit refresh wait until the final scope releases and reads the current provider balance. Repeated disposal is safe.
 - Invalidate old scopes on disable, destroy, unbind, bind and resource selection. Disabled holders detach events and retain their provider for resynchronization on enable; unbind/destroy release the provider. Old tokens cannot affect newer scopes.
