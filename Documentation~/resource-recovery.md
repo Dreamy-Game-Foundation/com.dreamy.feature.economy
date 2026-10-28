@@ -125,7 +125,7 @@ The Shop Feature sample includes `ShopPanelResourceNavigator` for its scroll lis
 
 Import **Resource Recovery**, then open `ResourceRecoveryDemo.unity`. It has direct prefab references, safe area, multi-resource rows, silent/prompt actions, direct Gem navigation and a clearly marked demo grant button. The demo owns a dedicated persisted wallet (`DreamyRecoveryDemo`); production uses its existing wallet. Its tab gateway never seeds or grants balances. Use the explicit grant button to test partial/complete recovery and confirm again to spend.
 
-Editor menu `Dreamy/Economy/Create Resource Recovery Prefabs` creates new assets under Assets/DreamyResourceRecoveryGenerated and refuses to overwrite an existing folder. Imported samples include a scene builder under `Dreamy/Economy/Create Recovery Demo Scene`, which refuses to overwrite the supplied scene. An EventSystem is included in the demo scene; embedding the panel in a game requires the game's EventSystem. Keep GUIDs when moving sample assets.
+Use the supplied recovery and resource suggestion prefabs instead of generating new ones. Open the supplied `ResourceRecoveryDemo.unity` scene directly; the sample no longer includes an Editor scene builder. An EventSystem is included in the demo scene; embedding the panel in a game requires the game's EventSystem. Keep GUIDs when moving sample assets.
 
 Run from this sandbox:
 

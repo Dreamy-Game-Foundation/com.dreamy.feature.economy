@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — 0.7.0 candidate
+
+- Add engine-independent Reward Presentation contracts, scoped claim snapshots, FIFO queue and cancellation-safe sessions. Confirm waits for explicit Claim; Granted Notice never grants; RewardClaimFlow supports no-panel claiming.
+- Add importable persisted Reward Presentation sample with cached UIPanel, SafeArea, reward rows, demo scene, final-save failure/recovery controls and Editor lifecycle smoke.
+- Add contract/session/queue and real-file restart/recovery tests. Existing reward/wallet save schema remains v4; no presentation-owned player save is added.
+- Daily/Missions optional scoped-offer adapters ship in their own integration assemblies; Economy does not reference feature domains.
+
+- Remove redundant recovery and resource suggestion prefab generator menus and the recovery sample scene builder; use the supplied prefabs and scene. Keep the resource holder inspector.
+- Trim the Economy UI Editor assembly references to the resource holder runtime assembly.
+
 ## [0.6.0] - 2026-10-16
 
 - Load resource suggestion panels by address through PanelManager; register typed Coin/Gem presenters with PanelPresenterFactory. Remove direct prefab instantiation from suggestion presentation.
