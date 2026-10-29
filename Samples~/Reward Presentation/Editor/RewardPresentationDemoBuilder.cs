@@ -29,7 +29,7 @@ namespace Dreamy.Economy.RewardSample.Editor
         }
         private static readonly Color Navy=new(0.035f,0.05f,0.09f,1), Card=new(0.075f,0.10f,0.16f,1), Gold=new(1,0.76f,0.29f,1);
         // Writes only this sample's assets, in an additive scene, restoring the user's active scene.
-        [MenuItem("Dreamy/Economy/Samples/Build Reward Presentation Demo")]
+        // Explicit rebuild entry point for batchmode; omitted from the everyday Editor menu.
         public static void Build()
         {
             if(SceneManager.GetSceneByPath(Root+"/Scenes/RewardPresentationDemo.unity").isLoaded)

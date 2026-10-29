@@ -21,6 +21,6 @@ Call `RewardPresentationInstaller.Install(profileScope, panel)` once at the root
 
 RewardPanel/RewardItem prefabs include required bindings; visual names/icons come from ResourceDisplayCatalog with ID/amount fallback. Move assets through Unity with .meta files to own/reskin them. Use existing TMP Essentials GUIDs or deliberately replace fonts through Unity.
 
-A prebuilt scene and prefabs are supplied. Optional menu `Dreamy/Economy/Samples/Build Reward Presentation Demo` regenerates only this sample's assets; close the demo scene first. In Play Mode, the Editor helper `RewardPresentationSmoke.RunAsync(100)` checks repeated show/close and subscription/row counts.
+A prebuilt scene and prefabs are supplied. For explicit regeneration, close the demo scene and invoke `Dreamy.Economy.RewardSample.Editor.RewardPresentationDemoBuilder.Build` via Unity batchmode `-executeMethod`. It regenerates only this sample's assets and is intentionally absent from the Editor menu. In Play Mode, the Editor helper `RewardPresentationSmoke.RunAsync(100)` checks repeated show/close and subscription/row counts.
 
 See package Documentation~/reward-presentation.md for Confirm/Notice/optional no-panel usage, cancellation, results, feature adapters and recovery limits. Native/mobile, remote purchase and cloud guarantees require consumer-specific validation.
