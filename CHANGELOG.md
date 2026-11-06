@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.8.1] - 2026-11-06
+
+- Hide the optional Reward Presentation sample rebuild menu; use the supplied scene/prefabs. Runtime reward and wallet contracts are unchanged.
+- Synchronize package metadata and README; no asset GUID or game-save migration. Prepared locally; no release tag or publication is implied.
+
 ## [0.8.0] - 2026-10-28
 
 - Add per-holder `ResourceUIHolder.DeferRefresh()` scopes. Automatic balance events remain subscribed; both events and explicit refresh wait until the final scope releases and reads the current provider balance. Repeated disposal is safe.
@@ -93,4 +98,3 @@ Typed multi-resource spend/exchange, atomic detached commits, durable payload re
 
 - Expose resource icon and HUD target for host-owned reward presentation.
 - Add optional automatic balance refresh and synchronize the resource holder prefab.
-

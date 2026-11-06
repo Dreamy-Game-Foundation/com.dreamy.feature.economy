@@ -1,5 +1,11 @@
 # Dreamy Economy Contracts
 
+## Phiên bản 0.8.1
+
+Hide the optional Reward Presentation sample rebuild menu; use the supplied scene/prefabs. Runtime reward and wallet contracts are unchanged.
+
+Bản chuẩn bị phát hành nội bộ ngày 2026-11-06; chưa tạo/push tag. Giữ nguyên các sample đã import và meta GUID; import mới dùng version 0.8.1. Xem [CHANGELOG](CHANGELOG.md).
+
 Reusable reward panels, optional no-panel claiming and feature adapters: [Reward Presentation](Documentation~/reward-presentation.md).
 
 Spend/exchange nhiều tài nguyên và recovery tùy chọn: [API, migration và sample](Documentation~/resource-recovery.md).
