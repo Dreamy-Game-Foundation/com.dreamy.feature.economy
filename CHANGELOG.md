@@ -12,7 +12,7 @@
 - Preserve serialized fields and legacy `autoRefresh=false` manual mode. Add public `Unbind()` for explicit binding cleanup; no reward, save or Feedback logic enters the holder.
 - Document before-mutation acquisition, owner cancellation/close cleanup and Home/Shop migration. Add focused PlayMode coverage for balance, nesting, lifecycle and async cleanup. Minor version bump reflects additive public APIs; no prefab/save migration is required.
 
-## Unreleased — 0.7.0 candidate
+## [0.7.0] - 2026-10-20 (source candidate; included in 0.8.x)
 
 - Add engine-independent Reward Presentation contracts, scoped claim snapshots, FIFO queue and cancellation-safe sessions. Confirm waits for explicit Claim; Granted Notice never grants; RewardClaimFlow supports no-panel claiming.
 - Add importable persisted Reward Presentation sample with cached UIPanel, SafeArea, reward rows, demo scene, final-save failure/recovery controls and Editor lifecycle smoke.
@@ -52,7 +52,7 @@ funded/unavailable resources, cancellation, cleanup and reopen.
 - Share pending shortage-panel close completion through UniTaskCompletionSource; only one runner awaits Hide. Simultaneous Close/CloseAsync calls and OnPreHide re-entry no longer register multiple continuations on a preserved pending UniTask.
 - Add deterministic Editor tests for concurrent close waiters, re-entry, cached reopen and propagation of hide failures. Recovery Editor/Shop suites: 10/10 passed in Unity 6000.4.12f1.
 
-## Unreleased follow-up — 2026-10-16
+## Historical 0.5.x/0.6.0 integration follow-up — 2026-10-16
 
 - Wire Shop shortage recovery in the sandbox composition root; use the shared Popup stack.
 - NotEnoughResourcesPanel now uses UIPanel and a BaseFeaturePanel prefab variant with inherited SafeArea/tweens.
@@ -73,7 +73,7 @@ Typed multi-resource spend/exchange, atomic detached commits, durable payload re
 - Add unified-owner, migration, interleaved write, duplicate and persistence-failure regressions.
 
 
-## [Unreleased]
+## Historical resolved-reward work (included in 0.5.0 and later)
 
 - Add immutable typed resolved rewards, canonical versioned fingerprints and
   length-prefixed request and entry identities.
